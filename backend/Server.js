@@ -3,6 +3,9 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const { PORT, BASE_URL } = require("./config/env");
 
+// Routes
+const userRoutes = require("./routes/userRoutes");
+const deliveryRoutes = require("./routes/deliveryRoutes");
 
 // Create express app
 const app = express();
@@ -13,6 +16,14 @@ const app = express();
 
 // Middleware to parse incoming JSON data
 app.use(express.json());
+
+app.use("/api/user", userRoutes);
+app.use("/api/delivery", deliveryRoutes);
+
+// Catch undefined routes
+app.use((req, res, next) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
 // Database Connection
 connectDB()
