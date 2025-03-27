@@ -4,8 +4,8 @@ const connectDB = require("./config/db");
 const { PORT, BASE_URL } = require("./config/env");
 
 // Routes
-const userRoutes = require("./routes/userRoutes");
-const deliveryRoutes = require("./routes/deliveryRoutes");
+const userRoutes = require("./routes/authRoutes");
+const deliveryRoutes = require("./routes/deliveryRoute");
 
 // Create express app
 const app = express();

@@ -1,6 +1,6 @@
 const Delivery = require("../models/Delivery");
 const DriverLocation = require("../models/DriverLocation");
-const Notification = require("../models/Notification");
+// const Notification = require("../models/Notification");
 const haversine = require("haversine-distance");
 
 // Assign the nearest available driver
