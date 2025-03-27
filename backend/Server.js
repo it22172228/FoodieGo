@@ -3,7 +3,10 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const { PORT, BASE_URL } = require("./config/env");
 
-
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const restaurantRoutes = require("./routes/restaurantRoutes");
+const menuRoutes = require("./routes/menuRoutes");
 // Create express app
 const app = express();
 
@@ -13,6 +16,13 @@ const app = express();
 
 // Middleware to parse incoming JSON data
 app.use(express.json());
+app.use(cors()); 
+
+
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/restaurant", restaurantRoutes);
+app.use("/api", menuRoutes); 
 
 // Database Connection
 connectDB()
