@@ -1,8 +1,8 @@
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../config/env.js';
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config/env');
 
 // Middleware: Authenticate User
-export const authenticate = (req, res, next) => {
+authenticate = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -25,7 +25,7 @@ export const authenticate = (req, res, next) => {
 };
 
 // Middleware: Authorize User by Role
-export const authorize = (roles) => (req, res, next) => {
+authorize = (roles) => (req, res, next) => {
   try {
     if (!req.user) {
       return res.status(403).json({ message: "Access denied. User not authenticated." });
@@ -40,3 +40,5 @@ export const authorize = (roles) => (req, res, next) => {
     return res.status(500).json({ message: "Internal server error during authorization." });
   }
 };
+
+module.exports = { authenticate, authorize };

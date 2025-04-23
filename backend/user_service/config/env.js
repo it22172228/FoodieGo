@@ -1,7 +1,7 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5600;
 const DEV_MODE = process.env.DEV_MODE || "development";
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const MONGO_URI = process.env.MONGO_URI;
