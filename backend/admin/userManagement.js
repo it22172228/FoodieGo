@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import User from "../services/auth/models/User.js"; // Adjust path if needed
+import User from "./auth/models/User.js"; // Adjust path if needed
 
 export const getAllUsers = async (req, res) => {
     try {
