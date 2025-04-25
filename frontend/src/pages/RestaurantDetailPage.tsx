@@ -1,32 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import {
-  Star,
-  Clock,
-  MapPin,
-  Info,
-  Plus,
-} from "lucide-react";
+import { Star, Clock, MapPin, Info, Plus } from "lucide-react";
 import { restaurants, menuItems } from "@/data/mockData";
-import { useCart, MenuItem as CartMenuItem } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { Separator } from "@/components/ui/separator";
+
+// --- Fix 1: Define correct MenuItem type for this file ---
+type MenuItem = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  isPopular?: boolean;
+};
 
 const RestaurantDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [restaurant, setRestaurant] = useState<any | null>(null);
-  const [menu, setMenu] = useState<CartMenuItem[]>([]);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("Menu");
 
@@ -35,15 +33,20 @@ const RestaurantDetailPage = () => {
   useEffect(() => {
     // Find the restaurant
     const foundRestaurant = restaurants.find((r) => r.id === id);
+    setRestaurant(foundRestaurant || null);
+
     if (foundRestaurant) {
-      setRestaurant(foundRestaurant);
-      
-      // Filter menu items for this restaurant
-      const restaurantMenu = menuItems.filter((item) => item.restaurantId === id);
+      // --- Fix 3: Match menu items by numeric part of restaurant id ---
+      const restIdNum = foundRestaurant.id.replace("r", "");
+      const restaurantMenu = (menuItems as MenuItem[]).filter(
+        (item) => item.restaurantId === restIdNum
+      );
       setMenu(restaurantMenu);
-      
+
       // Extract unique categories
-      const uniqueCategories = [...new Set(restaurantMenu.map((item) => item.category))];
+      const uniqueCategories = [
+        ...new Set(restaurantMenu.map((item) => item.category)),
+      ];
       setCategories(uniqueCategories);
     }
   }, [id]);
@@ -66,7 +69,7 @@ const RestaurantDetailPage = () => {
       {/* Restaurant Cover Image */}
       <div
         className="h-64 md:h-80 w-full bg-cover bg-center"
-        style={{ backgroundImage: `url(${restaurant.coverImage})` }}
+        style={{ backgroundImage: `url(${restaurant.coverImage || restaurant.image})` }}
       >
         <div className="h-full w-full bg-black/50 flex items-end">
           <div className="container mx-auto px-4 pb-8">
@@ -85,8 +88,11 @@ const RestaurantDetailPage = () => {
                 <Clock className="h-5 w-5 mr-1" />
                 <span>{restaurant.deliveryTime}</span>
               </div>
+              {/* --- Fix 2: Use only allowed Badge variants --- */}
               {restaurant.isOpen ? (
-                <Badge variant="success" className="bg-green-500 hover:bg-green-600">Open</Badge>
+                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                  Open
+                </Badge>
               ) : (
                 <Badge variant="destructive">Closed</Badge>
               )}
@@ -96,62 +102,67 @@ const RestaurantDetailPage = () => {
       </div>
 
       <div className="container mx-auto py-8 px-4">
-        <Tabs defaultValue="Menu" className="w-full">
+        <Tabs defaultValue="Menu" className="w-full" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-8">
-            <TabsTrigger value="Menu" onClick={() => setActiveTab("Menu")}>
-              Menu
-            </TabsTrigger>
-            <TabsTrigger value="Info" onClick={() => setActiveTab("Info")}>
-              Info
-            </TabsTrigger>
-            <TabsTrigger value="Reviews" onClick={() => setActiveTab("Reviews")}>
-              Reviews
-            </TabsTrigger>
+            <TabsTrigger value="Menu">Menu</TabsTrigger>
+            <TabsTrigger value="Info">Info</TabsTrigger>
+            <TabsTrigger value="Reviews">Reviews</TabsTrigger>
           </TabsList>
 
           <TabsContent value="Menu">
-            {groupedMenu.map((group) => (
-              <div key={group.category} className="mb-10">
-                <h2 className="text-2xl font-bold mb-4">{group.category}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {group.items.map((menuItem) => (
-                    <Card key={menuItem.id} className="overflow-hidden border hover:border-primary/30 transition-colors">
-                      <div className="flex flex-col sm:flex-row h-full">
-                        <div className="sm:w-1/3 h-32 sm:h-auto overflow-hidden">
-                          <img
-                            src={menuItem.image}
-                            alt={menuItem.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <CardContent className="flex-1 flex flex-col p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-semibold">{menuItem.name}</h3>
-                              <p className="text-sm text-muted-foreground mt-1 mb-2 line-clamp-2">
-                                {menuItem.description}
-                              </p>
+            {groupedMenu.length > 0 ? (
+              groupedMenu.map((group) => (
+                <div key={group.category} className="mb-10">
+                  <h2 className="text-2xl font-bold mb-4">{group.category}</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {group.items.map((menuItem) => (
+                      <Card key={menuItem.id} className="overflow-hidden border hover:border-primary/30 transition-colors">
+                        <div className="flex flex-col sm:flex-row h-full">
+                          <div className="sm:w-1/3 h-32 sm:h-auto overflow-hidden">
+                            <img
+                              src={menuItem.image}
+                              alt={menuItem.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <CardContent className="flex-1 flex flex-col p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold">{menuItem.name}</h3>
+                                <p className="text-sm text-muted-foreground mt-1 mb-2 line-clamp-2">
+                                  {menuItem.description}
+                                </p>
+                              </div>
+                              {menuItem.price > 500 && (
+                                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                  Premium
+                                </Badge>
+                              )}
                             </div>
-                            {menuItem.price > 500 && <Badge variant="default" className="bg-green-500 hover:bg-green-600">Premium</Badge>}
-                          </div>
-                          <div className="mt-auto flex items-center justify-between pt-2">
-                            <span className="font-semibold">Rs. {menuItem.price.toFixed(2)}</span>
-                            <Button 
-                              size="sm" 
-                              className="ml-auto"
-                              onClick={() => addItem(menuItem)}
-                              disabled={!restaurant.isOpen}
-                            >
-                              <Plus className="h-4 w-4 mr-1" /> Add
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </div>
-                    </Card>
-                  ))}
+                            <div className="mt-auto flex items-center justify-between pt-2">
+                              <span className="font-semibold">Rs. {menuItem.price.toFixed(2)}</span>
+                              <Button
+                                size="sm"
+                                className="ml-auto"
+                                onClick={() => addItem(menuItem)}
+                                disabled={!restaurant.isOpen}
+                              >
+                                <Plus className="h-4 w-4 mr-1" /> Add
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-medium mb-2">No menu items found</h3>
+                <p className="text-muted-foreground">This restaurant currently has no menu items.</p>
               </div>
-            ))}
+            )}
           </TabsContent>
 
           <TabsContent value="Info">
@@ -189,15 +200,13 @@ const RestaurantDetailPage = () => {
                   </div>
                 </div>
               </div>
-
               <Separator className="my-8" />
-
               <div>
                 <h2 className="text-2xl font-bold mb-4">About {restaurant.name}</h2>
                 <p className="text-muted-foreground">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. 
-                  Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus 
-                  rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna 
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.
+                  Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus
+                  rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna
                   non est bibendum non venenatis nisl tempor. Suspendisse dictum feugiat nisl ut dapibus.
                 </p>
               </div>
@@ -215,7 +224,6 @@ const RestaurantDetailPage = () => {
                     <span className="text-muted-foreground ml-2">(124 reviews)</span>
                   </div>
                 </div>
-
                 <div className="space-y-6">
                   {/* Mock reviews */}
                   {Array.from({ length: 3 }).map((_, i) => (
@@ -236,9 +244,7 @@ const RestaurantDetailPage = () => {
                         </div>
                       </div>
                       <div className="text-sm text-muted-foreground mb-2">
-                        {new Date(
-                          Date.now() - 1000 * 60 * 60 * 24 * (i + 1)
-                        ).toLocaleDateString()}
+                        {new Date(Date.now() - 1000 * 60 * 60 * 24 * (i + 1)).toLocaleDateString()}
                       </div>
                       <p>
                         {[
