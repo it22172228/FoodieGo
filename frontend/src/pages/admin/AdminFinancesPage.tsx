@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import AdminLayout from "@/components/Layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,7 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { useAdmin } from "@/contexts/AdminContext";
 import { useNotification } from "@/contexts/NotificationContext";
 
-// Mock data
+// Mock data (as in your file)
 const revenueData = [
   { name: "Jan", revenue: 4000, expenses: 2400, profit: 1600 },
   { name: "Feb", revenue: 3000, expenses: 1398, profit: 1602 },
@@ -105,7 +104,6 @@ const driverPayouts = [
   },
 ];
 
-// Refund requests
 const refundRequests = [
   {
     id: "REF001",
@@ -127,14 +125,64 @@ const refundRequests = [
   },
 ];
 
+// CSV export utility
+function exportToCSV(data: any[], headers: string[], fileName: string) {
+  const csvRows = [
+    headers.join(","),
+    ...data.map(row =>
+      headers.map(field => `"${(row[field] ?? "").toString().replace(/"/g, '""')}"`).join(",")
+    )
+  ];
+  const csvString = csvRows.join("\n");
+  const blob = new Blob([csvString], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 const AdminFinancesPage = () => {
   const { processRefund } = useAdmin();
   const { showNotification } = useNotification();
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("transactions");
 
   const handleRefund = (refundId: string, orderId: string, amount: number) => {
     processRefund(orderId, amount);
     showNotification(`Refund processed for order ${orderId} - $${amount}`, "success");
+  };
+
+  // Export handler
+  const handleExport = () => {
+    if (activeTab === "transactions") {
+      exportToCSV(
+        paymentTransactions,
+        ["id", "orderId", "customer", "amount", "date", "method", "status"],
+        "payment_transactions.csv"
+      );
+    } else if (activeTab === "restaurant-payouts") {
+      exportToCSV(
+        restaurantPayouts,
+        ["id", "restaurant", "amount", "period", "orders", "status"],
+        "restaurant_payouts.csv"
+      );
+    } else if (activeTab === "driver-payouts") {
+      exportToCSV(
+        driverPayouts,
+        ["id", "driver", "amount", "period", "deliveries", "status"],
+        "driver_payouts.csv"
+      );
+    } else if (activeTab === "refunds") {
+      exportToCSV(
+        refundRequests,
+        ["id", "orderId", "customer", "amount", "reason", "date", "status"],
+        "refund_requests.csv"
+      );
+    }
   };
 
   return (
@@ -142,7 +190,9 @@ const AdminFinancesPage = () => {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Financial Management</h1>
         <div className="flex gap-4">
-          <Button variant="outline">Export Reports</Button>
+          <Button variant="outline" onClick={handleExport}>
+            Export Reports
+          </Button>
           <Button>Process All Payouts</Button>
         </div>
       </div>
@@ -175,7 +225,7 @@ const AdminFinancesPage = () => {
         </Card>
       </div>
 
-      <Tabs defaultValue="transactions">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="restaurant-payouts">Restaurant Payouts</TabsTrigger>
