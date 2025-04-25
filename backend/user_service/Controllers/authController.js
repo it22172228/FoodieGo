@@ -1,8 +1,9 @@
-const User = require("../Models/User"); // Adjust path as needed
+const User = require("../Models/User"); 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config/env");
 
+// Handle user login
 const login = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -39,8 +40,9 @@ const login = async (req, res) => {
   }
 };
 
+// Handle user registration
 const register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, location } = req.body;
 
   try {
     const existingUser = await User.findOne({ email });
@@ -57,6 +59,10 @@ const register = async (req, res) => {
       password: hashedPassword,
       role: role || "customer",
       status: role === "restaurant" ? "pending" : "active",
+      location: {
+        location: location?.location, // e.g., "Malabe"
+        city: location?.city,         // e.g., "Colombo"
+      },
     });
 
     await newUser.save();
@@ -69,16 +75,16 @@ const register = async (req, res) => {
   }
 };
 
+// Handle user logout
 const logout = (req, res) => {
-  // If you're using cookies to store JWT, use clearCookie
   res.clearCookie("token");
-
   res.status(200).json({
     success: true,
     message: "Logged out successfully",
   });
 };
 
+// Get user profile
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -97,9 +103,28 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+// Fetch user by ID (new addition)
+const getUserById = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   login,
   register,
   logout,
   getUserProfile,
+  getUserById, 
 };

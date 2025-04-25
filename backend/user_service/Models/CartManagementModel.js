@@ -3,6 +3,12 @@ const mongoose=require("mongoose");
 const Schema=mongoose.Schema;
 
 const CartSchema=new Schema({
+
+    // 👇 ADDED: userId to track cart ownership
+    userId: {
+        type: String,
+        required: true,
+    },
     name:{
         type:String,
         required:true

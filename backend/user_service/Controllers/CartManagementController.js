@@ -1,10 +1,13 @@
 const Cart=require('../Models/CartManagementModel');
 
 const getAllCarts=async(req,res,next)=>{
+
+    const { userId } = req.query; // 👈 GET userId from query param
     let carts;
 
     try{
-        carts=await Cart.find();
+        // 👇 MODIFIED: filter by userId
+        carts = await Cart.find({userId});
 
     }catch(err){
         console.log(err);
@@ -36,11 +39,12 @@ const getCartById=async(req,res,next)=>{
 };
 
 const addToCart=async(req,res,next)=>{
-    const {name,image,location,price,qty,total}=req.body;
+    const {userId,name, image, location, price, qty, total } = req.body; // 👈 userId included
 
     let cart;
     try{
         cart =new Cart({
+            userId, // 👈 ADDED
             name,
             image,
             location,
