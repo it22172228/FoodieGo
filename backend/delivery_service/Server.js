@@ -9,13 +9,13 @@ const deliveryRoutes = require("./routes/deliveryRoute");
 // Create express app
 const app = express();
 
-
-// Middleware to allow CORS
-// app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+// ✅ Enable CORS for frontend at port 8080
+app.use(cors({ origin: "http://localhost:8080", credentials: true }));
 
 // Middleware to parse incoming JSON data
 app.use(express.json());
 
+// Use the delivery routes
 app.use("/api/delivery", deliveryRoutes);
 
 // Catch undefined routes
@@ -23,7 +23,7 @@ app.use((req, res, next) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-// Database Connection
+// Database Connection and Server Start
 connectDB()
   .then(() => {
     app.listen(PORT, () => {

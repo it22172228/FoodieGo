@@ -42,6 +42,7 @@ const LoginPage = () => {
 
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("user", JSON.stringify(response.data.user));
+            // console.log("token:", response.data.token);
 
             navigate("/"); // Redirect to home or appropriate dashboard
         } catch (err: any) {

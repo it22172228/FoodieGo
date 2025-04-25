@@ -33,6 +33,7 @@ import Earnings from "./pages/delivery/Earnings";
 import DeliveryDetails from "./pages/delivery/DeliveryDetails";
 import DeliveryProfile from "./pages/delivery/Profile";
 import Notifications from "./pages/delivery/Notification";
+import AssignDriverPage from "./pages/delivery/AssignDriverPage";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
                     <Route path="/deliver/profile" element={<MainLayout><DeliveryProfile /></MainLayout>} />
                     <Route path="/deliver/delivery-details" element={<MainLayout><DeliveryDetails /></MainLayout>} />
                     <Route path="/deliver/notifications" element={<MainLayout><Notifications /></MainLayout>} />
+                    <Route path="/deliver/assignDriver" element={<MainLayout><AssignDriverPage /></MainLayout>} />
                     
 
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

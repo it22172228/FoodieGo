@@ -121,10 +121,32 @@ const getUserById = async (req, res) => {
   }
 };
 
+const getAllDrivers = async (req, res) => {
+  try {
+    // Fetch all active drivers (users with role 'delivery' and status 'active')
+    const drivers = await User.find({
+      role: 'delivery',
+      status: 'active',
+    });
+
+    // Check if drivers are found
+    if (!drivers || drivers.length === 0) {
+      return res.status(404).json({ error: 'No active drivers found' });
+    }
+
+    // Return list of active drivers
+    return res.status(200).json(drivers);
+  } catch (error) {
+    console.error('Error fetching drivers:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   login,
   register,
   logout,
   getUserProfile,
   getUserById, 
+  getAllDrivers,
 };

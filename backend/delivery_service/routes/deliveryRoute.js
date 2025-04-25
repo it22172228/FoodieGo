@@ -7,5 +7,6 @@ router.post("/assignDriver", deliveryController.assignDriver);
 router.post("/reassignDriver", deliveryController.reassignDriver);
 router.put("/updateStatus", deliveryController.updateDeliveryStatus);
 router.get("/userDeliveries", deliveryController.getDriverDeliveries);
+// router.get("/getavailabledriver", deliveryController.getavailabledriver);
 
 module.exports = router;

@@ -8,5 +8,6 @@ router.post("/register",authController.register);
 router.put("/logout", authController.logout);
 router.get("/getUserProfile", authController.getUserProfile);
 router.get("/:userId", authController.getUserById); 
+router.get("/getAllDrivers", authController.getAllDrivers);
 
 module.exports = router;
