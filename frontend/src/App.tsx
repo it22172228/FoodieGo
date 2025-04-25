@@ -28,6 +28,15 @@ import AdminFinancesPage from "@/pages/admin/AdminFinancesPage";
 import AdminNotificationsPage from "@/pages/admin/AdminNotificationsPage";
 import NotFound from "./pages/NotFound";
 
+import Deliverydashboard from "./pages/delivery/deliverydashboard";
+import LiveTracking from "./pages/delivery/LiveTracking";
+import Earnings from "./pages/delivery/Earnings";
+import DeliveryDetails from "./pages/delivery/DeliveryDetails";
+import DeliveryProfile from "./pages/delivery/Profile";
+import Notifications from "./pages/delivery/Notification";
+import AssignDriverPage from "./pages/delivery/AssignDriverPage";
+
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -59,6 +68,16 @@ const App = () => (
                     <Route path="/admin/finances" element={<MainLayout><AdminFinancesPage /></MainLayout>} />
                     <Route path="/admin/notifications" element={<MainLayout><AdminNotificationsPage /></MainLayout>} />
                     
+                    {/* {Deliver} */}
+                    <Route path="/deliver" element={<MainLayout><Deliverydashboard /></MainLayout>} />
+                    <Route path="/deliver/live-tracking" element={<MainLayout><LiveTracking /></MainLayout>} />
+                    <Route path="/deliver/earning" element={<MainLayout><Earnings /></MainLayout>} />
+                    <Route path="/deliver/profile" element={<MainLayout><DeliveryProfile /></MainLayout>} />
+                    <Route path="/deliver/delivery-details" element={<MainLayout><DeliveryDetails /></MainLayout>} />
+                    <Route path="/deliver/notifications" element={<MainLayout><Notifications /></MainLayout>} />
+                    <Route path="/deliver/assignDriver" element={<MainLayout><AssignDriverPage /></MainLayout>} />
+                    
+
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
                   </Routes>

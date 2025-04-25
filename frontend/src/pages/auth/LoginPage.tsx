@@ -44,6 +44,11 @@ const LoginPage = () => {
                 role,
             });
 
+
+            localStorage.setItem("token", response.data.token);
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+            // console.log("token:", response.data.token);
+
             const userData = response.data.user;
 
             // Save to localStorage

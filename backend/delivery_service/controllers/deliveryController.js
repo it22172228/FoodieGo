@@ -1,51 +1,65 @@
 const Delivery = require("../models/Delivery");
 const User = require("../../user_service/Models/User");
 const Notification = require("../models/Notification");
+const axios = require("axios");
 
 exports.assignDriver = async (req, res) => {
   try {
     const { orderId, customerId, restaurantId } = req.body;
 
     // Fetch customer and restaurant details to get their locations
-    const customer = await User.findById(customerId);
-    const restaurant = await User.findById(restaurantId);
+    const customerResponse = await axios.get(
+      `http://localhost:5600/api/auth/${customerId}`
+    );
+    const restaurantResponse = await axios.get(
+      `http://localhost:5600/api/auth/${restaurantId}`
+    );
+
+    const customer = customerResponse.data;
+    const restaurant = restaurantResponse.data;
+
+    console.log("customer response:", customerResponse.data);
+    console.log("restaurant response:", restaurantResponse.data);
 
     if (!customer || !restaurant) {
-      return res.status(404).json({ error: "Customer or restaurant not found" });
+      return res
+        .status(404)
+        .json({ error: "Customer or restaurant not found" });
     }
 
     const pickupLocation = {
-      location: restaurant.location.location, // e.g., "Malabe"
-      city: restaurant.location.city,         // e.g., "Colombo"
+      location: restaurant.location?.location,
+      city: restaurant.location?.city,
     };
+    console.log("pickupLocation:", pickupLocation);
 
     const dropLocation = {
-      location: customer.location.location,   // e.g., "Kaduwela"
-      city: customer.location.city,           // e.g., "Colombo"
+      location: customer.location?.location,
+      city: customer.location?.city,
     };
+    console.log("dropLocation:", dropLocation);
 
-    // Step 1: Search for available drivers in the same pickup location
-    let driver = await User.findOne({
-      role: "Driver",
-      status: "Available",
-      "location.location": pickupLocation.location,
-    });
+    // Fetch all delivery drivers from external service
+    const driverResponse = await axios.get('http://localhost:5600/api/auth/getAllDrivers'); // API endpoint to get all delivery drivers
+    const allDrivers = driverResponse.data;
 
-    // Step 2: If no driver found, search in the same city
+    console.log("allDrivers:", allDrivers);
+
+    // Step 1: Filter drivers based on pickup location
+    let driver = allDrivers.find((d) =>
+      new RegExp(`^${pickupLocation.location}$`, "i").test(d.location.location)
+    );
+
+    // Step 2: If no driver is found, try by city
     if (!driver) {
-      driver = await User.findOne({
-        role: "Driver",
-        status: "Available",
-        "location.city": pickupLocation.city,
-      });
+      driver = allDrivers.find((d) =>
+        new RegExp(`^${pickupLocation.city}$`, "i").test(d.location.city)
+      );
     }
 
-    // Step 3: If no driver in location or city, assign any available driver
+    // Step 3: Fallback to any available driver if no match found
     if (!driver) {
-      driver = await User.findOne({
-        role: "Driver",
-        status: "Available",
-      });
+      driver = allDrivers.find((d) => d.status === "active");
     }
 
     if (!driver) {
@@ -80,7 +94,6 @@ exports.assignDriver = async (req, res) => {
       message: "Driver assigned successfully",
       delivery: newDelivery,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
@@ -101,7 +114,9 @@ exports.reassignDriver = async (req, res) => {
 
     // Step 2: Check if the delivery is in "Assigned" state and rejected
     if (delivery.status !== "Assigned") {
-      return res.status(400).json({ error: "Driver has not rejected the assignment yet" });
+      return res
+        .status(400)
+        .json({ error: "Driver has not rejected the assignment yet" });
     }
 
     // Step 3: Mark current driver as "Available"
@@ -143,7 +158,7 @@ exports.reassignDriver = async (req, res) => {
     delivery.driverId = driver._id;
     delivery.status = "Assigned"; // Reassign the delivery status
     delivery.assignedAt = new Date();
-    
+
     await delivery.save();
 
     // Step 8: Mark the new driver as "Busy"
@@ -166,7 +181,6 @@ exports.reassignDriver = async (req, res) => {
   }
 };
 
-
 exports.updateDeliveryStatus = async (req, res) => {
   try {
     const { deliveryId, status } = req.body;
@@ -185,7 +199,9 @@ exports.updateDeliveryStatus = async (req, res) => {
 
     // Step 3: Check if the driver is assigned to this delivery
     if (!delivery.driverId || delivery.driverId.toString() !== req.user.id) {
-      return res.status(403).json({ error: "You are not authorized to update the status" });
+      return res
+        .status(403)
+        .json({ error: "You are not authorized to update the status" });
     }
 
     // Step 4: Update the delivery status
@@ -229,7 +245,9 @@ exports.getDriverDeliveries = async (req, res) => {
     const deliveries = await Delivery.find({ driverId });
 
     if (!deliveries.length) {
-      return res.status(404).json({ error: "No deliveries found for this driver" });
+      return res
+        .status(404)
+        .json({ error: "No deliveries found for this driver" });
     }
 
     // Step 2: Return the list of deliveries
