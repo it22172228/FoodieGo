@@ -22,65 +22,92 @@ import { restaurants } from "@/data/mockData";
 import { toast } from "sonner";
 import { useNotification } from "@/contexts/NotificationContext";
 
+// --- Helper function to send SMS via your backend ---
+async function sendOrderSMS(to: string, body: string) {
+  try {
+    const response = await fetch("http://localhost:5000/api/send-sms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, body }),
+    });
+    const data = await response.json();
+    return data.success;
+  } catch {
+    return false;
+  }
+}
+
 const CartPage = () => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, clearCart, getCartTotal, restaurantId } = useCart();
   const { isAuthenticated, user } = useAuth();
   const { showNotification } = useNotification();
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const restaurant = restaurants.find((r) => r.id === restaurantId);
+  // restaurantId is "1", "2", etc. Restaurant mock data uses "r1", "r2", etc.
+  const restaurantKey = restaurantId ? `r${restaurantId}` : undefined;
+  const restaurant = restaurants.find((r) => r.id === restaurantKey);
+
   const subtotal = getCartTotal();
   const deliveryFee = restaurant?.deliveryFee || 0;
   const total = subtotal + deliveryFee;
-  
-  const handleCheckout = () => {
+
+  // --- Main checkout handler ---
+  const handleCheckout = async () => {
     if (!isAuthenticated) {
-      toast({
-        description: "Please login to continue with your order",
-      });
+      toast("Please login to continue with your order");
       return;
     }
-    
+
     if (user?.role !== "customer") {
       toast.error("Only customers can place orders");
       return;
     }
-    
+
     setIsProcessing(true);
-    
-    // Simulate processing
+
+    // --- Send SMS before proceeding ---
+    // Replace with user's phone number from profile if available
+    const smsSuccess = await sendOrderSMS(
+      "+94751170942",
+      `Your order at ${restaurant?.name || "FoodFusion"} has been placed successfully! Thank you for ordering with us.`
+    );
+    if (!smsSuccess) {
+      toast.error("Failed to send SMS notification.");
+      setIsProcessing(false);
+      return;
+    }
+
+    // Continue with order logic
     setTimeout(() => {
       toast.success("Your order has been placed successfully!");
-      
-      // Send a notification
+
       showNotification(
-        "Your order has been placed successfully! We'll notify you when a driver accepts your order.", 
+        "Your order has been placed successfully! We'll notify you when a driver accepts your order.",
         "success"
       );
-      
-      // Simulate delivery updates with delayed notifications
+
       setTimeout(() => {
         showNotification(
-          "A driver has accepted your order and is heading to the restaurant.", 
+          "A driver has accepted your order and is heading to the restaurant.",
           "info"
         );
       }, 5000);
-      
+
       setTimeout(() => {
         showNotification(
-          "Your order is being prepared by the restaurant.", 
+          "Your order is being prepared by the restaurant.",
           "info"
         );
       }, 8000);
-      
+
       clearCart();
       navigate("/orders");
       setIsProcessing(false);
     }, 2000);
   };
-  
+
   if (items.length === 0) {
     return (
       <div className="container mx-auto py-16 px-4 text-center">
@@ -112,8 +139,8 @@ const CartPage = () => {
         <div className="lg:col-span-2">
           {restaurant && (
             <div className="mb-4 flex items-center">
-              <img 
-                src={restaurant.image} 
+              <img
+                src={restaurant.image}
                 alt={restaurant.name}
                 className="h-12 w-12 rounded-md object-cover mr-3"
               />
@@ -123,7 +150,7 @@ const CartPage = () => {
               </div>
             </div>
           )}
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Items ({items.length})</CardTitle>
@@ -132,8 +159,8 @@ const CartPage = () => {
               {items.map((item) => (
                 <div key={item.id} className="flex justify-between items-center">
                   <div className="flex items-center">
-                    <img 
-                      src={item.image} 
+                    <img
+                      src={item.image}
                       alt={item.name}
                       className="h-16 w-16 rounded object-cover mr-3"
                     />
@@ -142,12 +169,12 @@ const CartPage = () => {
                       <p className="text-sm text-muted-foreground">Rs. {item.price.toFixed(2)}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <div className="flex items-center">
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
+                      <Button
+                        variant="outline"
+                        size="icon"
                         className="h-8 w-8 rounded-full"
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         disabled={isProcessing}
@@ -155,9 +182,9 @@ const CartPage = () => {
                         <Minus className="h-3 w-3" />
                       </Button>
                       <span className="mx-2 w-6 text-center">{item.quantity}</span>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
+                      <Button
+                        variant="outline"
+                        size="icon"
                         className="h-8 w-8 rounded-full"
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         disabled={isProcessing}
@@ -165,10 +192,10 @@ const CartPage = () => {
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => removeItem(item.id)}
                       disabled={isProcessing}
@@ -180,8 +207,8 @@ const CartPage = () => {
               ))}
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={clearCart}
                 disabled={isProcessing}
@@ -189,10 +216,10 @@ const CartPage = () => {
                 <Trash2 className="h-4 w-4 mr-2" />
                 Clear Cart
               </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => navigate(`/restaurants/${restaurantId}`)}
+
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/restaurants/${restaurantKey}`)}
                 disabled={isProcessing}
               >
                 Add More Items
@@ -200,7 +227,7 @@ const CartPage = () => {
             </CardFooter>
           </Card>
         </div>
-        
+
         <div>
           <Card>
             <CardHeader>
@@ -222,8 +249,8 @@ const CartPage = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 onClick={handleCheckout}
                 disabled={isProcessing}
               >
@@ -231,7 +258,7 @@ const CartPage = () => {
               </Button>
             </CardFooter>
           </Card>
-          
+
           <div className="mt-4 text-sm text-muted-foreground">
             <p>
               By placing your order, you agree to our Terms of Service and Privacy Policy.
