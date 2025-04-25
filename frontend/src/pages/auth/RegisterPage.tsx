@@ -40,6 +40,7 @@ const RegisterPage = () => {
 
     setIsLoading(true);
 
+
     try {
       const response = await axios.post("http://localhost:5600/api/auth/register", {
         name,
