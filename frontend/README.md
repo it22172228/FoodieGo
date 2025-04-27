@@ -1,73 +1,110 @@
-# Welcome to your Lovable project
+# FoodieGo Frontend
 
-## Project info
+This is the frontend of the FoodieGo application, built with **React**, **TypeScript**, **Vite**, **Tailwind CSS**, and **shadcn-ui**.
 
-**URL**: https://lovable.dev/projects/0e463409-a0db-4112-b897-b3941ba8bfdd
+---
 
-## How can I edit this code?
+## Table of Contents
 
-There are several ways of editing your application.
+- [Project Overview](#project-overview)
+- [Technologies Used](#technologies-used)
+- [Getting Started](#getting-started)
+- [Development](#development)
+- [Environment Variables](#environment-variables)
+- [Deployment](#deployment)
+- [License](#license)
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0e463409-a0db-4112-b897-b3941ba8bfdd) and start prompting.
+## Project Overview
 
-Changes made via Lovable will be committed automatically to this repo.
+FoodieGo is a food delivery platform that connects customers, restaurants, and delivery partners. This repository contains the frontend code for the application.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Technologies Used
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **React**: For building the user interface.
+- **TypeScript**: For type safety and better developer experience.
+- **Vite**: For fast development and build tooling.
+- **Tailwind CSS**: For styling.
+- **shadcn-ui**: For pre-built UI components.
 
-Follow these steps:
+---
 
+## Getting Started
+
+### Prerequisites
+
+1. **Node.js and npm**: Install Node.js (v16 or higher) and npm. You can download them from [Node.js official website](https://nodejs.org/).
+2. **Git**: Ensure Git is installed on your system.
+
+### Installation
+
+1. Clone the repository:
+   ```sh
+   git clone <YOUR_REPOSITORY_URL>
+   cd FoodieGo/frontend
+   ```
+
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+
+---
+
+## Development
+
+### Running the Development Server
+
+Start the development server with hot reloading:
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at [http://localhost:8080](http://localhost:8080).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Linting
 
-**Use GitHub Codespaces**
+Run the linter to check for code quality:
+```sh
+npm run lint
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Environment Variables
 
-This project is built with:
+The project requires the following environment variables. Create a `.env` file in the root of the `frontend` directory and add the following:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+VITE_STRIPE_PUBLIC_KEY=your-stripe-public-key
+```
 
-## How can I deploy this project?
+Replace `your-stripe-public-key` with your actual Stripe public key.
 
-Simply open [Lovable](https://lovable.dev/projects/0e463409-a0db-4112-b897-b3941ba8bfdd) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## Deployment
 
-Yes it is!
+### Build for Production
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+To build the project for production:
+```sh
+npm run build
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+The production-ready files will be generated in the `dist` directory.
+
+### Deployment Steps
+
+1. Use a hosting platform like **Vercel**, **Netlify**, or **AWS S3** to deploy the `dist` folder.
+2. Ensure the environment variables are configured in the hosting platform.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
