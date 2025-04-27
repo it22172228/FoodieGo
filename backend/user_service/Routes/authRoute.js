@@ -7,7 +7,9 @@ router.post("/login",authController.login);
 router.post("/register",authController.register);
 router.put("/logout", authController.logout);
 router.get("/getUserProfile", authController.getUserProfile);
-router.get("/:userId", authController.getUserById); 
 router.get("/getAllDrivers", authController.getAllDrivers);
+router.get("/:userId", authController.getUserById); 
+// router.patch('/:id', authController.updateDriverStatus);
+router.put("/updateProfile/:id", authController.updateProfile);
 
 module.exports = router;

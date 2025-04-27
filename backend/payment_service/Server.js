@@ -11,7 +11,7 @@ dotenv.config();
 
 app.use(cors());
 
-app.use("/", stripeRoutes);
+app.use("/api/payments", stripeRoutes);
 
 const PORT = process.env.PORT || 5400;
 

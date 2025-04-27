@@ -40,7 +40,7 @@ exports.assignDriver = async (req, res) => {
     console.log("dropLocation:", dropLocation);
 
     // Fetch all delivery drivers from external service
-    const driverResponse = await axios.get('http://localhost:5600/api/auth/getAllDrivers'); // API endpoint to get all delivery drivers
+    const driverResponse = await axios.get('http://localhost:5600/api/auth/getAllDrivers'); 
     const allDrivers = driverResponse.data;
 
     console.log("allDrivers:", allDrivers);
@@ -66,23 +66,29 @@ exports.assignDriver = async (req, res) => {
       return res.status(404).json({ error: "No available driver found" });
     }
 
+    console.log("Assigned driver:", driver);
+     
     // Step 4: Create delivery assignment
     const newDelivery = new Delivery({
       orderId,
       customerId,
+      customerName: customer.name,
       restaurantId,
+      restaurantName: restaurant.name,
       driverId: driver._id,
       pickupLocation,
       dropLocation,
-      status: "Assigned",
+      status: "Pending",
       assignedAt: new Date(),
     });
 
     await newDelivery.save();
 
-    // Step 5: Mark driver as busy
-    driver.status = "Busy";
-    await driver.save();
+    console.log("New delivery assignment:", newDelivery);
+    // // Step 5: Mark driver as busy
+    // await axios.patch(`http://localhost:5600/api/auth/${driver._id}`, {
+    //   status: "Busy",
+    // });
 
     // Step 6: Notify driver
     await Notification.create({
@@ -113,41 +119,32 @@ exports.reassignDriver = async (req, res) => {
     }
 
     // Step 2: Check if the delivery is in "Assigned" state and rejected
-    if (delivery.status !== "Assigned") {
-      return res
-        .status(400)
-        .json({ error: "Driver has not rejected the assignment yet" });
+    if (delivery.status !== "pending" && delivery.status !== "Cancelled") {
+      return res.status(400).json({ error: "Driver has not rejected the assignment yet" });
     }
 
-    // Step 3: Mark current driver as "Available"
-    const previousDriver = await User.findById(delivery.driverId);
-    if (previousDriver) {
-      previousDriver.status = "Available"; // Mark the previous driver as available
-      await previousDriver.save();
+    // Step 3: Get all active drivers and exclude the rejected one
+    const { excludeDriverId } = req.query; // Pass the rejected driver's ID in the request query
+    let driverResponse = await axios.get('http://localhost:5600/api/auth/getAllDrivers'); // Use the existing endpoint to fetch active drivers
+
+    let availableDrivers = driverResponse.data; // Array of all active drivers
+
+    // Filter out the previously assigned (rejected) driver
+    if (excludeDriverId) {
+      availableDrivers = availableDrivers.filter(driver => driver._id.toString() !== excludeDriverId);
     }
 
-    // Step 4: Try to find a new driver in the same location or city
-    let driver = await User.findOne({
-      role: "Driver",
-      status: "Available",
-      "location.location": delivery.pickupLocation.location,
-    });
+    // Step 4: Check for drivers in the same location or city
+    let driver = availableDrivers.find(d => d.location === delivery.pickupLocation.location);
 
     // Step 5: If no driver found, check for a driver in the same city
     if (!driver) {
-      driver = await User.findOne({
-        role: "Driver",
-        status: "Available",
-        "location.city": delivery.pickupLocation.city,
-      });
+      driver = availableDrivers.find(d => d.city === delivery.pickupLocation.city);
     }
 
     // Step 6: If no driver found in location or city, assign any available driver
     if (!driver) {
-      driver = await User.findOne({
-        role: "Driver",
-        status: "Available",
-      });
+      driver = availableDrivers[0]; // Assign the first available driver
     }
 
     if (!driver) {
@@ -156,19 +153,20 @@ exports.reassignDriver = async (req, res) => {
 
     // Step 7: Assign the new driver to the delivery
     delivery.driverId = driver._id;
-    delivery.status = "Assigned"; // Reassign the delivery status
+    delivery.status = "Cancelled"; // Reassign the delivery status
     delivery.assignedAt = new Date();
 
     await delivery.save();
 
     // Step 8: Mark the new driver as "Busy"
-    driver.status = "Busy";
-    await driver.save();
+    // await axios.patch(`http://localhost:5600/api/auth/${driver._id}`, {
+    //   status: "Busy",
+    // });
 
     // Step 9: Notify the new driver
     await Notification.create({
       userId: driver._id,
-      message: "You have been reassigned a new delivery!",
+      message: "Reassigned a new delivery!",
     });
 
     res.status(200).json({
@@ -181,10 +179,12 @@ exports.reassignDriver = async (req, res) => {
   }
 };
 
+
+
 exports.updateDeliveryStatus = async (req, res) => {
   try {
     const { deliveryId, status } = req.body;
-    const validStatuses = ["Picked Up", "In Transit", "Delivered"];
+    const validStatuses = ["Pending", "Assigned", "Picked Up", "In Transit", "Delivered", "Cancelled"];
 
     // Step 1: Check if the status is valid
     if (!validStatuses.includes(status)) {
@@ -198,11 +198,11 @@ exports.updateDeliveryStatus = async (req, res) => {
     }
 
     // Step 3: Check if the driver is assigned to this delivery
-    if (!delivery.driverId || delivery.driverId.toString() !== req.user.id) {
-      return res
-        .status(403)
-        .json({ error: "You are not authorized to update the status" });
-    }
+    // if (!delivery.driverId || delivery.driverId.toString() !== req.user.id) {
+    //   return res
+    //     .status(403)
+    //     .json({ error: "You are not authorized to update the status" });
+    // }
 
     // Step 4: Update the delivery status
     delivery.status = status;
@@ -219,16 +219,6 @@ exports.updateDeliveryStatus = async (req, res) => {
 
     await delivery.save();
 
-    // Step 5: Notify the customer and restaurant about the delivery status change
-    await Notification.create({
-      userId: delivery.customerId,
-      message: `Your order has been ${status.toLowerCase()}.`,
-    });
-    await Notification.create({
-      userId: delivery.restaurantId,
-      message: `Order ${delivery.orderId} is now ${status.toLowerCase()}.`,
-    });
-
     // Step 6: Respond with the updated delivery status
     res.json({ message: "Delivery status updated", delivery });
   } catch (error) {
@@ -239,21 +229,54 @@ exports.updateDeliveryStatus = async (req, res) => {
 
 exports.getDriverDeliveries = async (req, res) => {
   try {
-    const driverId = req.user.id; // Assuming the driver is logged in and their ID is available in req.user.id
-
-    // Step 1: Find all deliveries assigned to the driver
-    const deliveries = await Delivery.find({ driverId });
+    // Fetch all deliveries from the database (no filtering)
+    const deliveries = await Delivery.find();
 
     if (!deliveries.length) {
-      return res
-        .status(404)
-        .json({ error: "No deliveries found for this driver" });
+      return res.status(404).json({ error: "No deliveries found" });
     }
 
-    // Step 2: Return the list of deliveries
     res.json({ message: "Deliveries fetched successfully", deliveries });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getUserNotifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find();
+
+    if (!notifications.length) {
+      return res.status(404).json({ error: "No notifications found" });
+    }
+
+    res.status(200).json({
+      message: "Notifications fetched successfully",
+      notifications,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.createNotification = async (req, res) => {
+  const { userId, message } = req.body;
+
+  try {
+    if (!userId || !message) {
+      return res.status(400).json({ error: 'userId and message are required' });
+    }
+
+    const newNotification = await Notification.create({ userId, message });
+
+    res.status(201).json({
+      success: true,
+      notification: newNotification,
+    });
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    res.status(500).json({ error: 'Server error while creating notification' });
   }
 };

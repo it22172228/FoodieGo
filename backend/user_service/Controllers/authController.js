@@ -134,13 +134,73 @@ const getAllDrivers = async (req, res) => {
       return res.status(404).json({ error: 'No active drivers found' });
     }
 
-    // Return list of active drivers
-    return res.status(200).json(drivers);
+    // Get the list of driver IDs to exclude (for example, rejected driver ID passed in the request)
+    const { excludeDriverId } = req.query;  // Driver ID to exclude, passed as a query parameter
+
+    // If an ID is passed to exclude, filter it out from the list
+    let filteredDrivers = drivers;
+    if (excludeDriverId) {
+      filteredDrivers = drivers.filter(driver => driver._id.toString() !== excludeDriverId);
+    }
+
+    // Return the filtered list of drivers
+    return res.status(200).json(filteredDrivers);
   } catch (error) {
     console.error('Error fetching drivers:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+
+const updateDriverStatus = async (req, res) => {
+  const { id } = req.params;  // Driver ID from URL parameters
+  const { status } = req.body;  // New status from request body
+
+  try {
+    // Find the driver by ID
+    const driver = await User.findById(id);
+    
+    // If driver not found, return 404 error
+    if (!driver) {
+      return res.status(404).json({ error: 'Driver not found' });
+    }
+
+    // Update driver's status
+    driver.status = status;
+
+    // Save the updated driver document
+    await driver.save();
+
+    // Respond with success message and updated driver
+    res.status(200).json({
+      message: 'Driver status updated successfully',
+      driver
+    });
+  } catch (error) {
+    // Handle any errors
+    console.error('Error updating driver status:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+ const updateProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
+
+    const user = await User.findByIdAndUpdate(id, updatedData, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 
 module.exports = {
   login,
@@ -149,4 +209,6 @@ module.exports = {
   getUserProfile,
   getUserById, 
   getAllDrivers,
+  updateDriverStatus,
+  updateProfile
 };

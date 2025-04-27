@@ -5,6 +5,7 @@ const { PORT, BASE_URL } = require("./config/env");
 
 // Routes
 const deliveryRoutes = require("./routes/deliveryRoute");
+const earningsRoute = require ("./routes/earningsRoute.js");
 
 // Create express app
 const app = express();
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // Use the delivery routes
 app.use("/api/delivery", deliveryRoutes);
+app.use("/api/earnings", earningsRoute);
 
 // Catch undefined routes
 app.use((req, res, next) => {
