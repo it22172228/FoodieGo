@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import axios from "axios";
+const API_BASE = "http://localhost:5600/api/carts";
 
 export interface MenuItem {
   id: string;
@@ -16,10 +18,10 @@ export interface CartItem extends MenuItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: MenuItem, quantity?: number) => void;
-  removeItem: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
-  clearCart: () => void;
+  addItem: (item: MenuItem, quantity?: number) => Promise<void>;
+  removeItem: (itemId: string) => Promise<void>;
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   getCartTotal: () => number;
   getItemCount: () => number;
   restaurantId: string | null;
@@ -31,105 +33,150 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Load cart from local storage
-    const savedCart = localStorage.getItem("foodFusionCart");
-    if (savedCart) {
-      const parsedCart = JSON.parse(savedCart);
-      setItems(parsedCart.items || []);
-      setRestaurantId(parsedCart.restaurantId || null);
+  // Always get token from localStorage
+  const getToken = () => localStorage.getItem("foodFusionToken");
+
+  // Fetch cart if token is present
+  const fetchCart = async () => {
+    const token = getToken();
+    if (!token) {
+      setItems([]);
+      setRestaurantId(null);
+      return;
     }
+    try {
+      const response = await axios.get(`${API_BASE}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data && Array.isArray(response.data.items)) {
+        handleCartUpdate(response.data.items);
+      } else if (Array.isArray(response.data)) {
+        handleCartUpdate(response.data);
+      } else {
+        setItems([]);
+      }
+    } catch (error) {
+      setItems([]);
+      setRestaurantId(null);
+      console.error('Cart fetch error:', error);
+    }
+  };
+
+  // Listen for storage changes (login/logout from other tabs)
+  useEffect(() => {
+    fetchCart();
+    const handleStorageChange = () => fetchCart();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Save cart to local storage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("foodFusionCart", JSON.stringify({ items, restaurantId }));
-  }, [items, restaurantId]);
+  const handleCartUpdate = (newItems: CartItem[]) => {
+    setItems(newItems || []);
+    setRestaurantId(newItems && newItems[0]?.restaurantId || null);
+  };
 
-  const addItem = (item: MenuItem, quantity = 1) => {
-    if (restaurantId && item.restaurantId !== restaurantId) {
-      toast({
-        title: "Items from different restaurants",
-        description: "Your cart contains items from a different restaurant. Would you like to clear your cart and add this item?",
-        action: {
-          label: "Clear and add",
-          onClick: () => {
-            setItems([{ ...item, quantity }]);
-            setRestaurantId(item.restaurantId);
-            toast.success(`Added ${item.name} to your cart.`);
-          },
-        },
+  // Helper for all cart API requests
+  const cartRequest = async (
+    method: 'post'|'put'|'delete',
+    endpoint: string,
+    data?: any
+  ) => {
+    const token = getToken();
+    if (!token) {
+      toast.error("Please login to perform this action");
+      throw new Error("No token available");
+    }
+    try {
+      const response = await axios({
+        method,
+        url: `${API_BASE}${endpoint}`,
+        headers: { Authorization: `Bearer ${token}` },
+        data
       });
-      return;
-    }
-
-    setItems((currentItems) => {
-      const existingItem = currentItems.find((i) => i.id === item.id);
-      if (existingItem) {
-        return currentItems.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + quantity } : i
-        );
-      } else {
-        if (!restaurantId) {
-          setRestaurantId(item.restaurantId);
-        }
-        return [...currentItems, { ...item, quantity }];
-      }
-    });
-    
-    toast.success(`${quantity} x ${item.name} added to cart.`);
-  };
-
-  const removeItem = (itemId: string) => {
-    setItems((currentItems) => {
-      const newItems = currentItems.filter((item) => item.id !== itemId);
-      if (newItems.length === 0) {
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        toast.error("Session expired - please login again");
+        setItems([]);
         setRestaurantId(null);
+        window.dispatchEvent(new Event("storage"));
       }
-      return newItems;
-    });
-  };
-
-  const updateQuantity = (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(itemId);
-      return;
+      throw error;
     }
-
-    setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === itemId ? { ...item, quantity } : item
-      )
-    );
   };
 
-  const clearCart = () => {
-    setItems([]);
-    setRestaurantId(null);
-    toast.success("Cart cleared");
+  // Add item to cart
+  const addItem = async (item: MenuItem, quantity = 1) => {
+    try {
+      const data = await cartRequest('post', '/add', { item, quantity });
+      handleCartUpdate(data.items || data);
+      toast.success(`${quantity}x ${item.name} added to cart`);
+    } catch (error: any) {
+      if (error.response?.status === 400 && error.response.data.requiresConfirmation) {
+        toast("Cart contains items from another restaurant. Clear cart?", {
+          action: {
+            label: "Clear and add",
+            onClick: async () => {
+              try {
+                await cartRequest('delete', '/clear');
+                const data = await cartRequest('post', '/add', { item, quantity });
+                handleCartUpdate(data.items || data);
+                toast.success(`${quantity}x ${item.name} added to cart`);
+              } catch (err) {
+                toast.error("Failed to update cart");
+              }
+            },
+          },
+        });
+      } else {
+        toast.error("Failed to add item to cart");
+      }
+    }
   };
 
-  const getCartTotal = () => {
-    return items.reduce((total, item) => total + item.price * item.quantity, 0);
+  const removeItem = async (itemId: string) => {
+    try {
+      const data = await cartRequest('delete', `/remove/${itemId}`);
+      handleCartUpdate(data.items || data);
+      toast.success("Item removed from cart");
+    } catch (error) {
+      toast.error("Failed to remove item from cart");
+    }
   };
 
-  const getItemCount = () => {
-    return items.reduce((count, item) => count + item.quantity, 0);
+  const updateQuantity = async (itemId: string, quantity: number) => {
+    try {
+      const data = await cartRequest('put', `/update/${itemId}`, { quantity });
+      handleCartUpdate(data.items || data);
+    } catch (error) {
+      toast.error("Failed to update quantity");
+    }
   };
+
+  const clearCart = async () => {
+    try {
+      await cartRequest('delete', '/clear');
+      handleCartUpdate([]);
+      toast.success("Cart cleared");
+    } catch (error) {
+      toast.error("Failed to clear cart");
+    }
+  };
+
+  const getCartTotal = () => items.reduce((t, i) => t + i.price * i.quantity, 0);
+  const getItemCount = () => items.reduce((c, i) => c + i.quantity, 0);
 
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addItem,
-        removeItem,
-        updateQuantity,
-        clearCart,
-        getCartTotal,
-        getItemCount,
-        restaurantId,
-      }}
-    >
+    <CartContext.Provider value={{
+      items,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      getCartTotal,
+      getItemCount,
+      restaurantId
+    }}>
       {children}
     </CartContext.Provider>
   );
@@ -137,8 +184,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
+  if (!context) throw new Error("useCart must be used within CartProvider");
   return context;
 };

@@ -1,22 +1,23 @@
-const express=require("express");
-// const mongoose=require("mongoose");
-// const connectDB=require("./database/config.js");
-const dotenv=require("dotenv");
-const cors=require("cors");
-const app=express();
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const app = express();
 
-const stripeRoutes = require('./Routes/PaymentRoutes.js');
-
+// Load environment variables FIRST
 dotenv.config();
 
-app.use(cors());
+// Then initialize Stripe routes
+const stripeRoutes = require('./Routes/PaymentRoutes');
 
+<<<<<<< Updated upstream
 app.use("/", stripeRoutes);
+=======
+app.use(cors());
+app.use(express.json());
+app.use("/api/payments", stripeRoutes);
+>>>>>>> Stashed changes
 
 const PORT = process.env.PORT || 5400;
-
-// console.log("Stripe secret:", process.env.STRIPE_SECRET);
-
 app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

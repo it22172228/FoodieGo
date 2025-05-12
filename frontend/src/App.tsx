@@ -28,6 +28,20 @@ import AdminFinancesPage from "@/pages/admin/AdminFinancesPage";
 import AdminNotificationsPage from "@/pages/admin/AdminNotificationsPage";
 import NotFound from "./pages/NotFound";
 
+<<<<<<< Updated upstream
+=======
+import Deliverydashboard from "./pages/delivery/deliverydashboard";
+import LiveTracking from "./pages/delivery/LiveTracking";
+import Earnings from "./pages/delivery/Earnings";
+import DeliveryDetails from "./pages/delivery/DeliveryDetails";
+import DeliveryProfile from "./pages/delivery/Profile";
+import Notifications from "./pages/delivery/Notification";
+import AssignDriverPage from "./pages/delivery/AssignDriverPage";
+
+import PaymentSuccess from './pages/User/Payment/PaymentSuccess';
+import PaymentCancel from './pages/User/Payment/PaymentCancel';
+
+>>>>>>> Stashed changes
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -61,6 +75,9 @@ const App = () => (
                     
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
+
+                    <Route path="/payment-success" element={<MainLayout><PaymentSuccess /></MainLayout>} />
+                    <Route path="/payment-cancel" element={<MainLayout><PaymentCancel /></MainLayout>} />
                   </Routes>
                 </BrowserRouter>
               </AdminProvider>

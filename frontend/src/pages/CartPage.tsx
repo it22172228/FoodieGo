@@ -22,6 +22,31 @@ import { restaurants } from "@/data/mockData";
 import { toast } from "sonner";
 import { useNotification } from "@/contexts/NotificationContext";
 
+<<<<<<< Updated upstream
+=======
+// Add this import at the top with other imports
+import { loadStripe } from "@stripe/stripe-js";
+
+// Add these constants above your component
+
+const apiURL = "http://localhost:5400/api/payments"; // Adjust this to your backend URL
+
+// --- Helper function to send SMS via your backend ---
+async function sendOrderSMS(to: string, body: string) {
+  try {
+    const response = await fetch("http://localhost:5000/api/send-sms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, body }),
+    });
+    const data = await response.json();
+    return data.success;
+  } catch {
+    return false;
+  }
+}
+
+>>>>>>> Stashed changes
 const CartPage = () => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, clearCart, getCartTotal, restaurantId } = useCart();
@@ -34,8 +59,47 @@ const CartPage = () => {
   const subtotal = getCartTotal();
   const deliveryFee = restaurant?.deliveryFee || 0;
   const total = subtotal + deliveryFee;
+<<<<<<< Updated upstream
   
   const handleCheckout = () => {
+=======
+
+  // Inside your CartPage component, add this function:
+  const makePayment=async()=>{
+    const stripe=await loadStripe("pk_test_51RDI58FfB6lW4ek0nhTfFa3p5oZ9EQXQfjPh93RJ8qUSeDM3CuQGei8XTbQOTVODiwDh2DGNz8RkJwJ3ebhDSroH003LElCvhu");
+    
+    const body={
+      items: items.map(item => ({  // Changed from 'products: carts'
+        id: item.id,
+        name: item.name,
+        price: item.price,  // Ensure this is in LKR
+        quantity: item.quantity,
+        image: item.image
+      })),
+      deliveryFee: deliveryFee,//adding the delivery fee attribute
+    }
+
+    const headers={
+      "Content-Type":"application/json"
+    }
+
+    const response=await fetch(`${apiURL}/create-checkout-session`,{
+      method:"POST",
+      headers:headers,
+      body:JSON.stringify(body)
+    })
+
+    const session=await response.json();
+
+    const result=stripe.redirectToCheckout({
+      sessionId:session.id
+    })
+  }
+
+
+  // --- Main checkout handler ---
+  const handleCheckout = async () => {
+>>>>>>> Stashed changes
     if (!isAuthenticated) {
       toast({
         description: "Please login to continue with your order",
@@ -97,6 +161,8 @@ const CartPage = () => {
       </div>
     );
   }
+
+  
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -222,9 +288,15 @@ const CartPage = () => {
               </div>
             </CardContent>
             <CardFooter>
+<<<<<<< Updated upstream
               <Button 
                 className="w-full" 
                 onClick={handleCheckout}
+=======
+              <Button
+                className="w-full"
+                onClick={makePayment}
+>>>>>>> Stashed changes
                 disabled={isProcessing}
               >
                 {isProcessing ? "Processing..." : "Proceed to Checkout"}

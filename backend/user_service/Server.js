@@ -24,7 +24,7 @@ const authRoutes = require("./Routes/authRoute.js");
 app.use("/api", FoodMenuRoute);
 app.use("/api", categoryRoutes);
 app.use("/api", bannerRoutes);
-app.use("/carts", CartRoutes);
+app.use("/api/carts", CartRoutes);
 app.use("/api/auth", authRoutes);
 
 // Start server after DB connection

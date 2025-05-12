@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams,useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,12 +25,20 @@ import { Separator } from "@/components/ui/separator";
 
 const RestaurantDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState<any | null>(null);
   const [menu, setMenu] = useState<CartMenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("Menu");
 
   const { addItem } = useCart();
+
+  // Function to handle adding item and navigating to cart
+  const handleAddToCart = (menuItem: MenuItem) => {
+    console.log("Adding to cart:", menuItem);
+    addItem(menuItem);
+    navigate("/cart");
+  };
 
   useEffect(() => {
     // Find the restaurant
@@ -110,6 +118,7 @@ const RestaurantDetailPage = () => {
           </TabsList>
 
           <TabsContent value="Menu">
+<<<<<<< Updated upstream
             {groupedMenu.map((group) => (
               <div key={group.category} className="mb-10">
                 <h2 className="text-2xl font-bold mb-4">{group.category}</h2>
@@ -123,6 +132,49 @@ const RestaurantDetailPage = () => {
                             alt={menuItem.name}
                             className="w-full h-full object-cover"
                           />
+=======
+            {groupedMenu.length > 0 ? (
+              groupedMenu.map((group) => (
+                <div key={group.category} className="mb-10">
+                  <h2 className="text-2xl font-bold mb-4">{group.category}</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {group.items.map((menuItem) => (
+                      <Card key={menuItem.id} className="overflow-hidden border hover:border-primary/30 transition-colors">
+                        <div className="flex flex-col sm:flex-row h-full">
+                          <div className="sm:w-1/3 h-32 sm:h-auto overflow-hidden">
+                            <img
+                              src={menuItem.image}
+                              alt={menuItem.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <CardContent className="flex-1 flex flex-col p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold">{menuItem.name}</h3>
+                                <p className="text-sm text-muted-foreground mt-1 mb-2 line-clamp-2">
+                                  {menuItem.description}
+                                </p>
+                              </div>
+                              {menuItem.price > 500 && (
+                                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                  Premium
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="mt-auto flex items-center justify-between pt-2">
+                              <span className="font-semibold">Rs. {menuItem.price.toFixed(2)}</span>
+                              <Button
+                                size="sm"
+                                className="ml-auto"
+                                onClick={() => handleAddToCart(menuItem)}
+                                disabled={!restaurant.isOpen}
+                              >
+                                <Plus className="h-4 w-4 mr-1" /> Add
+                              </Button>
+                            </div>
+                          </CardContent>
+>>>>>>> Stashed changes
                         </div>
                         <CardContent className="flex-1 flex flex-col p-4">
                           <div className="flex justify-between items-start">

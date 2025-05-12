@@ -33,7 +33,24 @@ const RegisterPage = () => {
             return;
         }
 
+<<<<<<< Updated upstream
         setIsLoading(true);
+=======
+  return (
+    <div className="container max-w-md mx-auto py-16 px-4">
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Create an account</CardTitle>
+          <CardDescription>Join our platform to enjoy our services</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={role} onValueChange={value => setRole(value as typeof role)}>
+            <TabsList className="grid grid-cols-3 mb-6">
+              <TabsTrigger value="customer">Customer</TabsTrigger>
+              <TabsTrigger value="restaurant">Restaurant</TabsTrigger>
+              <TabsTrigger value="delivery">Delivery</TabsTrigger>
+            </TabsList>
+>>>>>>> Stashed changes
 
         try {
             const response = await axios.post("http://localhost:5000/api/auth/register", {

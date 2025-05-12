@@ -1,13 +1,15 @@
-const express=require("express");
-const router2=express.Router();
+const express = require("express");
+const router = express.Router();
+const cartController = require("../Controllers/CartManagementController");
 
-const Cart=require("../Models/CartManagementModel");
-const CartController=require("../Controllers/CartManagementController");
+// Apply customer verification middleware to all cart routes
+router.use(cartController.verifyCustomer);
 
-router2.get("/",CartController.getAllCarts);
-router2.post("/",CartController.addToCart);
-router2.get("/:id",CartController.getCartById);
-router2.put("/:id",CartController.updateCart);
-router2.delete("/:id",CartController.deleteCart);
+router.get("/", cartController.getCart);
+router.post("/add", cartController.updateCart);
 
-module.exports=router2;
+router.put("/update/:itemId", cartController.updateItemQuantity);
+router.delete("/remove/:itemId", cartController.removeItem);
+router.delete("/clear", cartController.clearCart);
+
+module.exports = router;

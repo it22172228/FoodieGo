@@ -40,8 +40,15 @@ const LoginPage = () => {
                 role,
             });
 
+<<<<<<< Updated upstream
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("user", JSON.stringify(response.data.user));
+=======
+            localStorage.setItem("foodFusionToken", response.data.token);
+            localStorage.setItem("foodFusionUser", JSON.stringify(response.data.user));
+
+            console.log("token:", response.data.token);
+>>>>>>> Stashed changes
 
             navigate("/"); // Redirect to home or appropriate dashboard
         } catch (err: any) {
